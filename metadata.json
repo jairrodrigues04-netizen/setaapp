@@ -1,0 +1,5 @@
+{
+  "name": "SetaApp",
+  "description": "Gestão financeira offline para motoristas. Controle de veículos, metas diárias e histórico.",
+  "requestFramePermissions": []
+}
