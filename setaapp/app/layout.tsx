@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'DIFX',
+  title: 'SetaApp',
   description: 'Gestão financeira offline para motoristas',
 };
 
