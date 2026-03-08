@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,8 +19,9 @@ const app = isConfigured
   : null;
 
 const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
 
 const googleProvider = new GoogleAuthProvider();
 const microsoftProvider = new OAuthProvider('microsoft.com');
 
-export { app, auth, googleProvider, microsoftProvider, isConfigured };
+export { app, auth, db, googleProvider, microsoftProvider, isConfigured };

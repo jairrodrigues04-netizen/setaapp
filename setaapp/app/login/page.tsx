@@ -31,23 +31,6 @@ export default function LoginPage() {
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user is already logged in
-  useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser({
-          id: user.uid,
-          name: user.displayName || user.email?.split("@")[0] || "Usuário",
-          email: user.email || "",
-          avatar: user.photoURL || undefined,
-        });
-        router.push("/");
-      }
-    });
-    return () => unsubscribe();
-  }, [router, setUser]);
-
   const handleError = (err: any) => {
     console.error(err);
     if (err.code === "auth/invalid-credential") {

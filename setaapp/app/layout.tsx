@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SplashLoader } from '@/components/splash-loader';
+import { AuthGuard } from '@/components/auth-guard';
 import './globals.css';
 
 const inter = Inter({
@@ -27,8 +27,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <SplashLoader />
-          {children}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
         </ThemeProvider>
       </body>
     </html>

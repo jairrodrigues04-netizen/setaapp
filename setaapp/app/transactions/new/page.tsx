@@ -70,6 +70,12 @@ export default function NewTransactionPage() {
 
   const handleSave = () => {
     setError("");
+    
+    if (!activeVehicle) {
+      setError("Por favor, selecione ou adicione um veículo ativo primeiro.");
+      return;
+    }
+
     const numAmount = parseFloat(amount.replace(",", "."));
     if (!numAmount || numAmount <= 0) {
       setError("Por favor, insira um valor válido.");
@@ -176,6 +182,17 @@ export default function NewTransactionPage() {
           </button>
         </div>
 
+        {/* Date Input */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground/60">Data</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full bg-card border border-black/10 dark:border-white/10 rounded-xl p-4 font-medium outline-none focus:border-foreground transition-colors"
+          />
+        </div>
+
         {/* Amount Input */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground/60">Valor</label>
@@ -210,17 +227,6 @@ export default function NewTransactionPage() {
             <span>{activeCategories.find(c => c.id === category)?.label || "Selecione uma categoria"}</span>
             <ChevronDown className="w-5 h-5 text-foreground/60" />
           </button>
-        </div>
-
-        {/* Date Input */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/60">Data</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-card border border-black/10 dark:border-white/10 rounded-xl p-4 font-medium outline-none focus:border-foreground transition-colors"
-          />
         </div>
 
         {/* KM and Hours (Only for Income) */}
