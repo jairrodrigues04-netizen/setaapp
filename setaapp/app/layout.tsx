@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import { AuthGuard } from '@/components/auth-guard';
+import { AuthGuard } from '../components/auth-guard';
 import './globals.css';
 
 const inter = Inter({
