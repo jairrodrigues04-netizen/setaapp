@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Key, LogOut, Car, PieChart, Settings, ChevronRight, User } from "lucide-react";
 import { useStore } from "@/store/use-store";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; // Importamos o db
 import { signOut } from "firebase/auth";
-import { useRef } from "react";
+import { useRef, useState } from "react"; // Adicionamos useState
+import { doc, updateDoc } from "firebase/firestore"; // Importamos funções do Firestore
 
 export default function ProfilePage() {
   const router = useRouter();
-  const user = useStore((state) => state.user);
-  const setUser = useStore((state) => state.setUser);
+  const user = useStore((state: any) => state.user);
+  const setUser = useStore((state: any) => state.setUser);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false); // Estado para feedback visual
 
   const handleLogout = async () => {
     try {
@@ -28,13 +30,37 @@ export default function ProfilePage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && user?.id) {
+      setUploading(true);
       const reader = new FileReader();
+      
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        if (user) {
-          setUser({ ...user, avatar: base64String });
-        }
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300; // Tamanho ideal de avatar
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); // Bem leve
+          
+          try {
+            // SALVA NO FIRESTORE (Campo avatar conforme seu original)
+            await updateDoc(doc(db as any, "users", user.id), { 
+              avatar: compressedBase64 
+            });
+
+            // ATUALIZA O ZUSTAND
+            setUser({ ...user, avatar: compressedBase64 });
+            setUploading(false);
+          } catch (error) {
+            console.error(error);
+            setUploading(false);
+          }
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -59,14 +85,15 @@ export default function ProfilePage() {
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-black/5 dark:bg-white/10 border-4 border-card shadow-sm flex items-center justify-center overflow-hidden">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                <img src={user.avatar} alt={user.name} className={`w-full h-full object-cover ${uploading ? 'opacity-50' : ''}`} />
               ) : (
                 <User className="w-10 h-10 text-foreground/40" />
               )}
             </div>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-foreground text-background rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform"
+              disabled={uploading}
+              className={`absolute bottom-0 right-0 w-8 h-8 bg-foreground text-background rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform ${uploading ? 'animate-pulse' : ''}`}
             >
               <Camera className="w-4 h-4" />
             </button>

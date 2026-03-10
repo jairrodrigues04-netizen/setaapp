@@ -23,43 +23,37 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Handle Auth State & Load Data
   useEffect(() => {
-    if (!auth) {
-      return;
-    }
+    if (!auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is logged in
+        // 1. Carrega o básico rápido para a tela não piscar
         setUser({
           id: firebaseUser.uid,
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split("@")[0] ||
-            "Usuário",
+          name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Usuário",
           email: firebaseUser.email || "",
           avatar: firebaseUser.photoURL || undefined,
         });
 
-        // Load data from Firestore
+        // 2. Busca os dados reais e definitivos no Firestore
         if (db) {
           try {
-            const currentDb = db;
-            if (!currentDb) return;
-            const docRef = doc(currentDb, "users", firebaseUser.uid);
+            const docRef = doc(db, "users", firebaseUser.uid);
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
               const data = docSnap.data();
               
-              // Restore avatar if it exists in Firestore and not in Firebase Auth
-              if (data.user?.avatar && !firebaseUser.photoURL) {
-                setUser({
-                  id: firebaseUser.uid,
-                  name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Usuário",
-                  email: firebaseUser.email || "",
-                  avatar: data.user.avatar,
-                });
-              }
+              // A MÁGICA: A foto do banco de dados tem prioridade absoluta!
+              const savedAvatar = data.user?.avatar || data.avatar || firebaseUser.photoURL || undefined;
+
+              // Sobrescreve com os dados do banco
+              setUser({
+                id: firebaseUser.uid,
+                name: data.user?.name || firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Usuário",
+                email: firebaseUser.email || "",
+                avatar: savedAvatar, // Aqui a foto que você subiu finalmente ganha!
+              });
 
               useStore.setState({
                 transactions: data.transactions || [],
@@ -75,12 +69,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       } else {
         // User is logged out
         setUser(null);
-        // Clear local data so another user doesn't see it
         useStore.setState({
           transactions: [],
           vehicles: [],
           dailyGoal: 0,
-          // Keep default categories or reset them
         });
       }
       setIsInitializing(false);
@@ -111,7 +103,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         await setDoc(
           docRef,
           {
-            user, // Save user object including avatar
+            user, // Salva o usuário com a foto nova no Firebase a cada alteração
             transactions,
             vehicles,
             categories,
@@ -125,7 +117,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const timeoutId = setTimeout(syncData, 2000); // Debounce sync by 2 seconds
+    const timeoutId = setTimeout(syncData, 2000); // Debounce
     return () => clearTimeout(timeoutId);
   }, [transactions, vehicles, categories, dailyGoal, user, isInitializing]);
 

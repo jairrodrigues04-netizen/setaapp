@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, X } from "lucide-react";
 import { useStore } from "@/store/use-store";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 export default function NewVehiclePage() {
   const router = useRouter();
-  const addVehicle = useStore((state) => state.addVehicle);
-  const vehicles = useStore((state) => state.vehicles);
+  
+  // Pegando do store e forçando any para evitar erros de tipagem
+  const store = useStore() as any;
+  const { addVehicle, vehicles, user } = store;
   
   const [name, setName] = useState("");
   const [type, setType] = useState("carro");
@@ -17,7 +21,6 @@ export default function NewVehiclePage() {
   const [plate, setPlate] = useState("");
   const [error, setError] = useState("");
   
-  // Lista de tipos de veículos gerenciada pelo estado
   const [vehicleTypes, setVehicleTypes] = useState([
     { id: "bicicleta", label: "Bicicleta" },
     { id: "moto", label: "Moto" },
@@ -26,11 +29,10 @@ export default function NewVehiclePage() {
     { id: "outros", label: "Outros" },
   ]);
 
-  // Estado para o Modal de Novo Tipo
   const [showNewTypeModal, setShowNewTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
   
-  const hasOtherVehicles = vehicles.length > 0; 
+  const hasOtherVehicles = vehicles?.length > 0; 
   const [makeActive, setMakeActive] = useState(!hasOtherVehicles);
 
   const isBicycle = type === "bicicleta";
@@ -45,20 +47,57 @@ export default function NewVehiclePage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setError("");
+
+    // 1. TRAVAS DE SEGURANÇA
     if (!name.trim()) {
       setError("Preencha o nome do veículo.");
       return;
     }
-    addVehicle({
-      name,
-      type,
-      model,
-      plate,
-      isActive: makeActive
-    });
-    router.push("/vehicles");
+    
+    // Se não for bicicleta, modelo e placa são obrigatórios
+    if (!isBicycle) {
+      if (!model.trim()) {
+        setError("Preencha o modelo do veículo.");
+        return;
+      }
+      if (!plate.trim()) {
+        setError("Preencha a placa do veículo.");
+        return;
+      }
+    }
+
+    if (!user?.id) {
+      setError("Usuário não identificado.");
+      return;
+    }
+
+    try {
+      // 2. Prepara os dados para o Firebase
+      const vehicleData = {
+        name: name.trim(),
+        type,
+        model: isBicycle ? "Não aplicável" : model.trim(),
+        plate: isBicycle ? "Não aplicável" : plate.trim().toUpperCase(),
+        isActive: makeActive,
+        createdAt: new Date().toISOString()
+      };
+
+      // 3. Salva no Firebase
+      const docRef = await addDoc(collection(db as any, "users", user.id, "vehicles"), vehicleData);
+
+      // 4. Salva no Zustand
+      addVehicle({
+        ...vehicleData,
+        id: docRef.id
+      });
+
+      router.push("/vehicles");
+    } catch (e) {
+      console.error("Erro ao salvar veículo:", e);
+      setError("Erro ao conectar com o banco de dados.");
+    }
   };
 
   return (

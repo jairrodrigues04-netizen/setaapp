@@ -295,7 +295,7 @@ export default function LoginPage() {
           <div className="flex-grow border-t border-black/10 dark:border-white/10"></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
           <button 
             type="button"
             onClick={() => handleSocialLogin("google")}
@@ -310,7 +310,7 @@ export default function LoginPage() {
             </svg>
             Google
           </button>
-          <button 
+          {/* <button 
             type="button"
             onClick={() => handleSocialLogin("microsoft")}
             disabled={isLoading || !isConfigured}
@@ -324,6 +324,7 @@ export default function LoginPage() {
             </svg>
             Outlook
           </button>
+          */}
         </div>
 
         {/* Toggle Login/Signup */}
